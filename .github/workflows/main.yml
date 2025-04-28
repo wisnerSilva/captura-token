@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 * * * *'  # Executa de hora em hora
 
 jobs:
   build:
@@ -29,9 +29,12 @@ jobs:
         python coletar_token.py
 
     - name: Fazer commit do novo token
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
         git config --global user.email "you@example.com"
         git config --global user.name "GitHub Actions Bot"
+        git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}
         git add token.txt
         git commit -m "Token atualizado automaticamente"
-        git push
+        git push origin main
