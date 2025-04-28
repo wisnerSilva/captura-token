@@ -1,8 +1,11 @@
 name: Capturar Token Automático
 
 on:
+  push:
+    branches:
+      - main
   schedule:
-    - cron: '0 * * * *'  # Roda de hora em hora (posso ensinar mudar depois!)
+    - cron: '0 * * * *'
 
 jobs:
   build:
@@ -21,17 +24,14 @@ jobs:
       run: |
         pip install selenium webdriver-manager
 
-    - name: Rodar o Script para Capturar Token
+    - name: Rodar o Script
       run: |
         python coletar_token.py
-      env:
-        EMAIL_HIPLAT: ${{ secrets.EMAIL_HIPLAT }}
-        SENHA_HIPLAT: ${{ secrets.SENHA_HIPLAT }}
 
     - name: Fazer commit do novo token
       run: |
-        git config --global user.email "actions@github.com"
-        git config --global user.name "GitHub Actions"
+        git config --global user.email "you@example.com"
+        git config --global user.name "GitHub Actions Bot"
         git add token.txt
-        git commit -m "Atualizar token automático"
+        git commit -m "Token atualizado automaticamente"
         git push
