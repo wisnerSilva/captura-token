@@ -35,6 +35,9 @@ jobs:
         git config --global user.email "you@example.com"
         git config --global user.name "GitHub Actions Bot"
         git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}
+
         git add token.txt
+        git diff --staged --quiet && echo "📭 Sem mudanças no token. Nada para commitar." && exit 0
+
         git commit -m "Token atualizado automaticamente"
         git push origin main
