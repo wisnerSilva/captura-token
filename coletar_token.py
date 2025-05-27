@@ -21,13 +21,11 @@ def coletar_token():
         return None
 
     options = webdriver.ChromeOptions()
+    options.add_argument('--headless')  # Navegador invisível
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-blink-features=AutomationControlled')  # Diminui chance de bloqueio
     
-    # Modo Headless: Se necessário, descomente a linha abaixo
-    # options.add_argument('--headless')  # Navegador invisível
-
     # Inicializa o driver
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
@@ -102,17 +100,16 @@ def coletar_token():
         return None
 
     finally:
-        print("🌐 Navegador mantido aberto para análise")
-        input("Pressione Enter para fechar o navegador...")  # Aguarda interação para fechar o navegador
-        driver.quit()  # Fecha o navegador quando o usuário pressionar Enter
+        driver.quit()
 
 
 def salvar_token(token, arquivo="capturar-token/token.txt"):
     """
-    Função para salvar o token em um arquivo de texto
+    Função para salvar o token em um arquivo de texto no diretório especificado.
+    Sobrescreve o conteúdo do arquivo toda vez que é chamado.
     """
     if token:
-        # Cria a pasta capturar-token se não existir
+        # Cria o diretório capturar-token se não existir
         if not os.path.exists("capturar-token"):
             os.makedirs("capturar-token")
         
