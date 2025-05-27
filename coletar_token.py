@@ -91,7 +91,7 @@ def coletar_token():
             time.sleep(1)  # Aguarda 1 segundo entre as tentativas
 
         if token:
-            print(f"✅ TOKEN ENCONTRADO: {token}")
+            print(f"✅ TOKEN CAPTURADO COM SUCESSO: {token}")
         else:
             print("❌ Token não encontrado após tentativas!")
 
@@ -117,6 +117,10 @@ def salvar_token(token, arquivo="token.txt"):
         with open(os.path.join("tokens", arquivo), "w") as f:
             f.write(token)
         print(f"📄 Token salvo em '{arquivo}'!")
+        # Verifique o conteúdo gravado no arquivo para confirmar
+        with open(os.path.join("tokens", arquivo), "r") as f:
+            saved_token = f.read().strip()
+            print(f"✅ Token gravado corretamente: {saved_token}")
     else:
         print("❌ Não foi possível salvar o token.")
 
