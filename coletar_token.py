@@ -1,3 +1,4 @@
+import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -5,7 +6,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
-import os
 
 def coletar_token():
     """
@@ -107,18 +107,22 @@ def coletar_token():
         driver.quit()  # Fecha o navegador quando o usuário pressionar Enter
 
 
-def salvar_token(token, arquivo="token.txt"):
+def salvar_token(token, arquivo="capturar-token/token.txt"):
     """
     Função para salvar o token em um arquivo de texto
     """
     if token:
-        if not os.path.exists("tokens"):  # Cria a pasta tokens se não existir
-            os.makedirs("tokens")
-        with open(os.path.join("tokens", arquivo), "w") as f:
+        # Cria a pasta capturar-token se não existir
+        if not os.path.exists("capturar-token"):
+            os.makedirs("capturar-token")
+        
+        # Salva o token no arquivo capturar-token/token.txt
+        with open(arquivo, "w") as f:
             f.write(token)
         print(f"📄 Token salvo em '{arquivo}'!")
+        
         # Verifique o conteúdo gravado no arquivo para confirmar
-        with open(os.path.join("tokens", arquivo), "r") as f:
+        with open(arquivo, "r") as f:
             saved_token = f.read().strip()
             print(f"✅ Token gravado corretamente: {saved_token}")
     else:
