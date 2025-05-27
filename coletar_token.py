@@ -5,23 +5,30 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
+import os
 
-# Configurações de tempo
-TEMPO_MAX_CARREGAMENTO = 120  # Tempo máximo para a página carregar (segundos)
-TEMPO_VERIFICAR_TOKEN = 30    # Tempo total tentando ler o token (segundos)
-TEMPO_ENTRE_TENTATIVAS = 1    # Intervalo entre tentativas de ler o token
+def coletar_token():
+    """
+    Função para logar na HiPlatform, acessar a página de relatórios e capturar o token dt.admin.token.
+    Retorna o token como string.
+    """
+    # Carregar as variáveis de ambiente para usuário e senha
+    email = os.getenv("EMAIL")
+    senha = os.getenv("SENHA")
+    
+    if not email or not senha:
+        print("❌ Usuário ou senha não fornecidos.")
+        return None
 
-def coletar_token(email, senha):
-    """
-    Função para logar na HiPlatform, acessar a página de destino e capturar o token dt.admin.token.
-    Retorna o token como string ou None se não for encontrado.
-    """
     options = webdriver.ChromeOptions()
-    options.add_argument('--headless')  # Executa sem abrir o navegador (modo invisível)
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-blink-features=AutomationControlled')
+    options.add_argument('--disable-blink-features=AutomationControlled')  # Diminui chance de bloqueio
+    
+    # Modo Headless: Se necessário, descomente a linha abaixo
+    # options.add_argument('--headless')  # Navegador invisível
 
+    # Inicializa o driver
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     try:
@@ -30,12 +37,14 @@ def coletar_token(email, senha):
         wait = WebDriverWait(driver, 40)
 
         # 1. Clica no botão "Continuar"
-        continuar_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Continuar']")))
+        continuar_btn = wait.until(
+            EC.element_to_be_clickable((By.XPATH, "//input[@value='Continuar']"))
+        )
         continuar_btn.click()
         print("✅ Botão CONTINUAR clicado!")
-        time.sleep(3)
+        time.sleep(5)
 
-        # 2. Preenche login e senha
+        # 2. Preenche login
         email_input = wait.until(EC.presence_of_element_located((By.ID, "login_login")))
         email_input.clear()
         email_input.send_keys(email)
@@ -43,46 +52,81 @@ def coletar_token(email, senha):
         senha_input = wait.until(EC.presence_of_element_located((By.ID, "login_password")))
         senha_input.clear()
         senha_input.send_keys(senha)
-        time.sleep(2)
+
+        time.sleep(3)
 
         # 3. Clica no botão "Entrar"
-        entrar_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Entrar' and not(@disabled)]")))
+        entrar_btn = wait.until(
+            EC.element_to_be_clickable((By.XPATH, "//input[@value='Entrar' and not(@disabled)]"))
+        )
         entrar_btn.click()
         print("✅ Botão ENTRAR clicado!")
 
-        # 4. Espera o redirecionamento para /products
+        # 4. Esperar /products carregar
         wait.until(EC.url_contains("/products"))
         print("✅ Página de produtos carregada!")
-        time.sleep(3)
 
-        # 5. Navega para a página final que garante injeção do token
-        final_url = "https://www5.directtalk.com.br/static/beta/admin/main.html"
-        driver.get(final_url)
-        print("🚀 Acessando página final (home/index)...")
+        time.sleep(5)
 
-        # 6. Aguarda carregamento completo da página
-        print("⏳ Aguardando carregamento da página...")
-        wait_final = WebDriverWait(driver, TEMPO_MAX_CARREGAMENTO)
-        wait_final.until(lambda d: d.execute_script("return document.readyState") == "complete")
-        print("✅ Página carregada com sucesso!")
+        # 5. Forçar navegação para a página de relatórios
+        relatorio_url = "https://www5.directtalk.com.br/static/beta/admin/main.html#!/relatorios/hsmReports?depto=-1"
+        driver.get(relatorio_url)
+        print("🚀 Acessando página de relatórios...")
 
-        # 7. Tenta capturar o token do localStorage
+        # 6. Esperar até que a URL contenha "callback_horus" (indica que o processo de redirecionamento aconteceu)
+        wait.until(EC.url_contains("callback_horus"))
+        print("✅ Página de redirecionamento carregada!")
+
+        # 7. Esperar a URL de redirecionamento se estabilizar
+        wait.until(EC.url_contains("main.html"))  # Aguarda a URL final
+        print("✅ Página final carregada!")
+
+        # 8. Aguardar até que o localStorage tenha o token
+        print("🔄 Verificando localStorage para token...")
         token = None
-        inicio = time.time()
-        while time.time() - inicio < TEMPO_VERIFICAR_TOKEN:
+        for _ in range(30):  # Tentar 30 vezes, aguardando até 30 segundos
             token = driver.execute_script("return window.localStorage.getItem('dt.admin.token');")
             if token:
                 break
-            time.sleep(TEMPO_ENTRE_TENTATIVAS)
+            time.sleep(1)  # Aguarda 1 segundo entre as tentativas
 
         if token:
-            print("✅ TOKEN CAPTURADO COM SUCESSO!")
-            print("🔐 DT-Fenix-Token:", token)
-            return token
+            print(f"✅ TOKEN ENCONTRADO: {token}")
         else:
-            print("❌ Token não encontrado no localStorage.")
-            return None
+            print("❌ Token não encontrado após tentativas!")
+
+        return token
+
+    except Exception as e:
+        print(f"⚠️ Erro durante o processo: {e}")
+        return None
 
     finally:
-        driver.quit()
-        print("🛑 Navegador encerrado.")
+        print("🌐 Navegador mantido aberto para análise")
+        input("Pressione Enter para fechar o navegador...")  # Aguarda interação para fechar o navegador
+        driver.quit()  # Fecha o navegador quando o usuário pressionar Enter
+
+
+def salvar_token(token, arquivo="token.txt"):
+    """
+    Função para salvar o token em um arquivo de texto
+    """
+    if token:
+        if not os.path.exists("tokens"):  # Cria a pasta tokens se não existir
+            os.makedirs("tokens")
+        with open(os.path.join("tokens", arquivo), "w") as f:
+            f.write(token)
+        print(f"📄 Token salvo em '{arquivo}'!")
+    else:
+        print("❌ Não foi possível salvar o token.")
+
+
+# =========================================
+# EXEMPLO DE USO:
+
+if __name__ == "__main__":
+    # Certifique-se de que as variáveis de ambiente EMAIL e SENHA estejam configuradas corretamente.
+    token = coletar_token()
+
+    # Salvar o token no arquivo de texto
+    salvar_token(token)
