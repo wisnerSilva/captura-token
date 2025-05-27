@@ -56,7 +56,7 @@ def coletar_token(email, senha):
         time.sleep(3)
 
         # 5. Navega para a página final que garante injeção do token
-        final_url = "https://www5.directtalk.com.br/static/beta/admin/main.html#!/home/index?depto=-1"
+        final_url = "https://www5.directtalk.com.br/static/beta/admin/main.html"
         driver.get(final_url)
         print("🚀 Acessando página final (home/index)...")
 
