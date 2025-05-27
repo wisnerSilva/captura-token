@@ -12,7 +12,6 @@ def coletar_token():
     Função para logar na HiPlatform, acessar a página de relatórios e capturar o token dt.admin.token.
     Retorna o token como string.
     """
-    # Carregar as variáveis de ambiente para usuário e senha
     email = os.getenv("EMAIL")
     senha = os.getenv("SENHA")
     
@@ -26,7 +25,6 @@ def coletar_token():
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-blink-features=AutomationControlled')  # Diminui chance de bloqueio
     
-    # Inicializa o driver
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     try:
@@ -109,17 +107,22 @@ def salvar_token(token, arquivo="capturar-token/token.txt"):
     Sobrescreve o conteúdo do arquivo toda vez que é chamado.
     """
     if token:
-        # Cria o diretório capturar-token se não existir
+        # Garantir que o diretório capturar-token existe
         if not os.path.exists("capturar-token"):
             os.makedirs("capturar-token")
         
-        # Salva o token no arquivo capturar-token/token.txt
-        with open(arquivo, "w") as f:
+        # Caminho completo para o arquivo de token
+        caminho_arquivo = os.path.join("capturar-token", "token.txt")
+        print(f"✅ Salvando token no arquivo: {caminho_arquivo}")
+        
+        # Salva o token no arquivo token.txt
+        with open(caminho_arquivo, "w") as f:
             f.write(token)
-        print(f"📄 Token salvo em '{arquivo}'!")
+        
+        print(f"📄 Token salvo em '{caminho_arquivo}'!")
         
         # Verifique o conteúdo gravado no arquivo para confirmar
-        with open(arquivo, "r") as f:
+        with open(caminho_arquivo, "r") as f:
             saved_token = f.read().strip()
             print(f"✅ Token gravado corretamente: {saved_token}")
     else:
