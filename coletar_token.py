@@ -39,6 +39,9 @@ def iniciar_driver():
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-blink-features=AutomationControlled')
     options.add_argument('--headless=new')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--disable-software-rasterizer')
+    options.add_argument('--window-size=1920,1080')
     options.add_argument(f'--user-data-dir={temp_dir}')
     return webdriver.Chrome(
         service=Service(ChromeDriverManager().install()),
