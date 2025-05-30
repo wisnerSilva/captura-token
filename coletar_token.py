@@ -32,9 +32,8 @@ headers = {
 # COLETA DE TOKEN VIA SELENIUM
 # ===============================
 def iniciar_driver():
-    user_data_dir = tempfile.mkdtemp()  # Diretório temporário único
     options = webdriver.ChromeOptions()
-    options.add_argument(f'--user-data-dir={user_data_dir}')
+    # Removido o user-data-dir
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-blink-features=AutomationControlled')
