@@ -1,5 +1,4 @@
 import os
-import tempfile
 import requests
 from datetime import datetime, timezone
 from selenium import webdriver
@@ -32,9 +31,6 @@ headers = {
 # COLETA DE TOKEN VIA SELENIUM
 # ===============================
 def iniciar_driver():
-    # Cria um diretório temporário único para o perfil Chrome
-    profile_dir = tempfile.mkdtemp(prefix="chrome_profile_")
-
     options = webdriver.ChromeOptions()
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
@@ -43,8 +39,7 @@ def iniciar_driver():
     options.add_argument('--disable-gpu')
     options.add_argument('--disable-software-rasterizer')
     options.add_argument('--window-size=1920,1080')
-    options.add_argument(f"--user-data-dir={profile_dir}")
-
+    # Não especificar user-data-dir para evitar conflitos
     return webdriver.Chrome(
         service=Service(ChromeDriverManager().install()),
         options=options
@@ -99,7 +94,7 @@ def salvar_token_no_bucket(token):
     upload_url = f"{SUPABASE_URL}/storage/v1/object/{BUCKET_NAME}/{file_name}"
     upload_headers = headers.copy()
     upload_headers["Content-Type"] = "text/plain"
-    response = requests.post(upload_url, headers=upload_headers, data=token.encode("utf-8"))
+    requests.post(upload_url, headers=upload_headers, data=token.encode("utf-8"))
 
 
 def salvar_token_na_tabela(token: str):
