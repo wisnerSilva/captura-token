@@ -37,7 +37,10 @@ def iniciar_driver():
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-blink-features=AutomationControlled')
     options.add_argument('--headless=new')
-    options.add_argument('--user-data-dir=/tmp/selenium')
+    import tempfile
+temp_dir = tempfile.mkdtemp()
+options.add_argument(f'--user-data-dir={temp_dir}')
+
     return webdriver.Chrome(
         service=Service(ChromeDriverManager().install()),
         options=options
