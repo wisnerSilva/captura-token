@@ -36,9 +36,8 @@ def iniciar_driver():
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-blink-features=AutomationControlled')
-    options.add_argument('--headless=new')  # obrigatório para ambientes CI como GitHub Actions
-    options.add_argument('--user-data-dir=/tmp/selenium')  # evita conflito de perfil
-
+    options.add_argument('--headless=new')
+    options.add_argument('--user-data-dir=/tmp/selenium')
     return webdriver.Chrome(
         service=Service(ChromeDriverManager().install()),
         options=options
