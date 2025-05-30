@@ -1,4 +1,5 @@
 import os
+import tempfile
 import requests
 from datetime import datetime, timezone
 from selenium import webdriver
@@ -31,7 +32,9 @@ headers = {
 # COLETA DE TOKEN VIA SELENIUM
 # ===============================
 def iniciar_driver():
+    user_data_dir = tempfile.mkdtemp()  # Diretório temporário único
     options = webdriver.ChromeOptions()
+    options.add_argument(f'--user-data-dir={user_data_dir}')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-blink-features=AutomationControlled')
@@ -39,7 +42,7 @@ def iniciar_driver():
     options.add_argument('--disable-gpu')
     options.add_argument('--disable-software-rasterizer')
     options.add_argument('--window-size=1920,1080')
-    # Não especificar user-data-dir para evitar conflitos
+
     return webdriver.Chrome(
         service=Service(ChromeDriverManager().install()),
         options=options
@@ -52,11 +55,16 @@ def fazer_login(driver, email, senha, timeout=20):
         btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Continuar']")))
         btn.click()
     except:
-        pass
+        pass  # se botão não aparecer, continua mesmo assim
+
     inp = wait.until(EC.presence_of_element_located((By.ID, "login_login")))
-    inp.clear(); inp.send_keys(email)
+    inp.clear()
+    inp.send_keys(email)
+
     pwd = wait.until(EC.presence_of_element_located((By.ID, "login_password")))
-    pwd.clear(); pwd.send_keys(senha)
+    pwd.clear()
+    pwd.send_keys(senha)
+
     ok = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Entrar' and not(@disabled)]")))
     ok.click()
     wait.until(EC.url_contains("/products"))
@@ -67,9 +75,7 @@ def coletar_token(email, senha, url, max_wait=60):
         fazer_login(driver, email, senha)
         driver.get(url)
         wait = WebDriverWait(driver, max_wait)
-        token = wait.until(lambda d: d.execute_script(
-            "return window.localStorage.getItem('dt.admin.token');"
-        ))
+        token = wait.until(lambda d: d.execute_script("return window.localStorage.getItem('dt.admin.token');"))
         return token
     except Exception as e:
         print("Erro ao coletar token:", e)
@@ -96,12 +102,14 @@ def salvar_token_no_bucket(token):
     upload_headers["Content-Type"] = "text/plain"
     requests.post(upload_url, headers=upload_headers, data=token.encode("utf-8"))
 
-
 def salvar_token_na_tabela(token: str):
     now = datetime.now(timezone.utc).isoformat()
     dados = {"token": token, "created_at": now}
     supabase.table(TABLE_NAME).insert(dados).execute()
 
+# ===============================
+# EXECUÇÃO PRINCIPAL
+# ===============================
 if __name__ == "__main__":
     token = coletar_token(EMAIL, SENHA, RELATORIO_URL)
     if token:
