@@ -32,6 +32,9 @@ headers = {
 # COLETA DE TOKEN VIA SELENIUM
 # ===============================
 def iniciar_driver():
+    # Cria um diretório temporário único para o perfil Chrome
+    profile_dir = tempfile.mkdtemp(prefix="chrome_profile_")
+
     options = webdriver.ChromeOptions()
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
@@ -40,7 +43,8 @@ def iniciar_driver():
     options.add_argument('--disable-gpu')
     options.add_argument('--disable-software-rasterizer')
     options.add_argument('--window-size=1920,1080')
-    # Não especificar user-data-dir para usar perfil temporário padrão
+    options.add_argument(f"--user-data-dir={profile_dir}")
+
     return webdriver.Chrome(
         service=Service(ChromeDriverManager().install()),
         options=options
@@ -85,7 +89,6 @@ def criar_bucket_se_nao_existir():
     url = f"{SUPABASE_URL}/storage/v1/bucket"
     body = {"name": BUCKET_NAME, "public": False}
     response = requests.post(url, headers=headers, json=body)
-    # Status 200 cria, 400 se já existe
     if response.status_code == 400 and "already exists" in response.text:
         pass
 
@@ -97,6 +100,7 @@ def salvar_token_no_bucket(token):
     upload_headers = headers.copy()
     upload_headers["Content-Type"] = "text/plain"
     response = requests.post(upload_url, headers=upload_headers, data=token.encode("utf-8"))
+
 
 def salvar_token_na_tabela(token: str):
     now = datetime.now(timezone.utc).isoformat()
