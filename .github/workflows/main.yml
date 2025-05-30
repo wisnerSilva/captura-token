@@ -1,36 +1,35 @@
-name: Coletar Token e Salvar no Supabase
+name: Coletar Token e Enviar para Supabase
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: "0 * * * *"  # roda a cada hora
-  workflow_dispatch:     # permite rodar manualmente
+    - cron: '0 * * * *'  # Executa de hora em hora
 
 jobs:
   run-script:
     runs-on: ubuntu-latest
 
-    env:
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-      SUPABASE_BUCKET: ${{ secrets.SUPABASE_BUCKET }}
-      SUPABASE_TABLE_NAME: ${{ secrets.SUPABASE_TABLE_NAME }}
-      EMAIL_HIPLAT: ${{ secrets.EMAIL_HIPLAT }}
-      SENHA_HIPLAT: ${{ secrets.SENHA_HIPLAT }}
-      RELATORIO_URL: ${{ secrets.RELATORIO_URL }}
-
     steps:
-      - name: 📥 Checkout do repositório
+      - name: 🧾 Checkout do código
         uses: actions/checkout@v3
 
-      - name: 🐍 Setup Python
+      - name: 🐍 Configurar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: 🔧 Instalar dependências
+      - name: 📦 Instalar dependências
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 🧪 Executar script
+      - name: ▶️ Rodar script de coleta
         run: python coletar_token.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_BUCKET: ${{ secrets.SUPABASE_BUCKET }}
+          SUPABASE_TABLE_NAME: ${{ secrets.SUPABASE_TABLE_NAME }}
+          EMAIL_HIPLAT: ${{ secrets.EMAIL_HIPLAT }}
+          SENHA_HIPLAT: ${{ secrets.SENHA_HIPLAT }}
+          RELATORIO_URL: ${{ secrets.RELATORIO_URL }}
