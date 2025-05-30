@@ -33,7 +33,11 @@ headers = {
 # COLETA DE TOKEN VIA SELENIUM
 # ===============================
 def iniciar_driver():
-    temp_dir = tempfile.mkdtemp()
+    # Cria um diretório de perfil único para evitar conflitos de user-data-dir
+    base_temp = tempfile.gettempdir()
+    profile_dir = os.path.join(base_temp, f"chrome_profile_{uuid.uuid4()}")
+    os.makedirs(profile_dir, exist_ok=True)
+
     options = webdriver.ChromeOptions()
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
@@ -42,7 +46,8 @@ def iniciar_driver():
     options.add_argument('--disable-gpu')
     options.add_argument('--disable-software-rasterizer')
     options.add_argument('--window-size=1920,1080')
-    options.add_argument(f'--user-data-dir={temp_dir}')
+    options.add_argument(f'--user-data-dir={profile_dir}')
+
     return webdriver.Chrome(
         service=Service(ChromeDriverManager().install()),
         options=options
