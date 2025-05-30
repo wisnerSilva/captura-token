@@ -1,4 +1,4 @@
-import os
+ import os
 import uuid
 import requests
 from datetime import datetime, timezone
@@ -32,19 +32,21 @@ headers = {
 # COLETA DE TOKEN VIA SELENIUM
 # ===============================
 def iniciar_driver():
+    import tempfile
+    temp_dir = tempfile.mkdtemp()
+
     options = webdriver.ChromeOptions()
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-blink-features=AutomationControlled')
     options.add_argument('--headless=new')
-    import tempfile
-temp_dir = tempfile.mkdtemp()
-options.add_argument(f'--user-data-dir={temp_dir}')
-
+    options.add_argument(f'--user-data-dir={temp_dir}')
+    
     return webdriver.Chrome(
         service=Service(ChromeDriverManager().install()),
         options=options
     )
+
 
 def fazer_login(driver, email, senha, timeout=20):
     wait = WebDriverWait(driver, timeout)
