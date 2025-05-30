@@ -1,140 +1,129 @@
-import os
+""import os
+import uuid
+import requests
+from datetime import datetime, timezone
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
-import time
+from supabase import create_client, Client
 
-def coletar_token():
-    """
-    Função para logar na HiPlatform, acessar a página de relatórios e capturar o token dt.admin.token.
-    Retorna o token como string.
-    """
-    email = os.getenv("EMAIL")
-    senha = os.getenv("SENHA")
-    
-    if not email or not senha:
-        print("❌ Usuário ou senha não fornecidos.")
-        return None
+# ===============================
+# CONFIGURAÇÃO VIA VARIÁVEIS DE AMBIENTE (SECRETS DO GITHUB)
+# ===============================
+EMAIL = os.environ.get("EMAIL_HIPLAT")
+SENHA = os.environ.get("SENHA_HIPLAT")
+RELATORIO_URL = os.environ.get("RELATORIO_URL")
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
+TABLE_NAME = os.environ.get("SUPABASE_TABLE_NAME")
+BUCKET_NAME = os.environ.get("SUPABASE_BUCKET")
 
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+headers = {
+    "apikey": SUPABASE_SERVICE_KEY,
+    "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}"
+}
+
+# ===============================
+# COLETA DE TOKEN VIA SELENIUM
+# ===============================
+def iniciar_driver():
     options = webdriver.ChromeOptions()
-    options.add_argument('--headless')  # Navegador invisível
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-blink-features=AutomationControlled')  # Diminui chance de bloqueio
-    
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    options.add_argument('--disable-blink-features=AutomationControlled')
+    return webdriver.Chrome(
+        service=Service(ChromeDriverManager().install()),
+        options=options
+    )
 
+def fazer_login(driver, email, senha, timeout=20):
+    wait = WebDriverWait(driver, timeout)
+    driver.get("https://horus.hiplatform.com/")
+    print("🚀 Acessando página de login...")
     try:
-        print("🚀 Acessando página de login...")
-        driver.get("https://horus.hiplatform.com/")
-        wait = WebDriverWait(driver, 40)
+        btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Continuar']")))
+        btn.click()
+        print("✅ CONTINUAR clicado")
+    except:
+        print("⚠️ CONTINUAR não encontrado — pulando")
+    inp = wait.until(EC.presence_of_element_located((By.ID, "login_login")))
+    inp.clear(); inp.send_keys(email)
+    pwd = wait.until(EC.presence_of_element_located((By.ID, "login_password")))
+    pwd.clear(); pwd.send_keys(senha)
+    ok = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Entrar' and not(@disabled)]")))
+    ok.click()
+    print("✅ ENTRAR clicado")
+    wait.until(EC.url_contains("/products"))
+    print("✅ Login bem-sucedido")
 
-        # 1. Clica no botão "Continuar"
-        continuar_btn = wait.until(
-            EC.element_to_be_clickable((By.XPATH, "//input[@value='Continuar']"))
-        )
-        continuar_btn.click()
-        print("✅ Botão CONTINUAR clicado!")
-        time.sleep(5)
-
-        # 2. Preenche login
-        email_input = wait.until(EC.presence_of_element_located((By.ID, "login_login")))
-        email_input.clear()
-        email_input.send_keys(email)
-
-        senha_input = wait.until(EC.presence_of_element_located((By.ID, "login_password")))
-        senha_input.clear()
-        senha_input.send_keys(senha)
-
-        time.sleep(3)
-
-        # 3. Clica no botão "Entrar"
-        entrar_btn = wait.until(
-            EC.element_to_be_clickable((By.XPATH, "//input[@value='Entrar' and not(@disabled)]"))
-        )
-        entrar_btn.click()
-        print("✅ Botão ENTRAR clicado!")
-
-        # 4. Esperar /products carregar
-        wait.until(EC.url_contains("/products"))
-        print("✅ Página de produtos carregada!")
-
-        time.sleep(5)
-
-        # 5. Forçar navegação para a página de relatórios
-        relatorio_url = "https://www5.directtalk.com.br/static/beta/admin/main.html#!/relatorios/hsmReports?depto=-1"
-        driver.get(relatorio_url)
-        print("🚀 Acessando página de relatórios...")
-
-        # 6. Esperar até que a URL contenha "callback_horus" (indica que o processo de redirecionamento aconteceu)
-        wait.until(EC.url_contains("callback_horus"))
-        print("✅ Página de redirecionamento carregada!")
-
-        # 7. Esperar a URL de redirecionamento se estabilizar
-        wait.until(EC.url_contains("main.html"))  # Aguarda a URL final
-        print("✅ Página final carregada!")
-
-        # 8. Aguardar até que o localStorage tenha o token
-        print("🔄 Verificando localStorage para token...")
-        token = None
-        for _ in range(30):  # Tentar 30 vezes, aguardando até 30 segundos
-            token = driver.execute_script("return window.localStorage.getItem('dt.admin.token');")
-            if token:
-                break
-            time.sleep(1)  # Aguarda 1 segundo entre as tentativas
-
-        if token:
-            print(f"✅ TOKEN CAPTURADO COM SUCESSO: {token}")
-        else:
-            print("❌ Token não encontrado após tentativas!")
-
+def coletar_token(email, senha, url, max_wait=60):
+    driver = iniciar_driver()
+    try:
+        fazer_login(driver, email, senha)
+        driver.get(url)
+        print("🚀 Acessando relatório")
+        wait = WebDriverWait(driver, max_wait)
+        token = wait.until(lambda d: d.execute_script(
+            "return window.localStorage.getItem('dt.admin.token');"
+        ))
+        print("✅ TOKEN ENCONTRADO:", token)
         return token
-
     except Exception as e:
-        print(f"⚠️ Erro durante o processo: {e}")
+        print("❌ Erro ao coletar token:", e)
         return None
-
     finally:
         driver.quit()
+        print("🌐 Navegador fechado")
 
-
-def salvar_token(token, arquivo="capturar-token/token.txt"):
-    """
-    Função para salvar o token em um arquivo de texto no diretório especificado.
-    Sobrescreve o conteúdo do arquivo toda vez que é chamado.
-    """
-    if token:
-        # Garantir que o diretório capturar-token existe
-        if not os.path.exists("capturar-token"):
-            os.makedirs("capturar-token")
-        
-        # Caminho completo para o arquivo de token
-        caminho_arquivo = os.path.join("capturar-token", "token.txt")
-        print(f"✅ Salvando token no arquivo: {caminho_arquivo}")
-        
-        # Salva o token no arquivo token.txt
-        with open(caminho_arquivo, "w") as f:
-            f.write(token)
-        
-        print(f"📄 Token salvo em '{caminho_arquivo}'!")
-        
-        # Verifique o conteúdo gravado no arquivo para confirmar
-        with open(caminho_arquivo, "r") as f:
-            saved_token = f.read().strip()
-            print(f"✅ Token gravado corretamente: {saved_token}")
+# ===============================
+# SUPABASE STORAGE & TABELA
+# ===============================
+def criar_bucket_se_nao_existir():
+    url = f"{SUPABASE_URL}/storage/v1/bucket"
+    body = {"name": BUCKET_NAME, "public": False}
+    response = requests.post(url, headers=headers, json=body)
+    if response.status_code == 200:
+        print("✅ Bucket criado com sucesso.")
+    elif response.status_code == 400 and "already exists" in response.text:
+        print("ℹ️ Bucket já existe.")
     else:
-        print("❌ Não foi possível salvar o token.")
+        print(f"⚠️ Erro ao criar bucket (pode já existir): {response.status_code} - {response.text}")
 
+def salvar_token_no_bucket(token):
+    criar_bucket_se_nao_existir()
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    file_name = f"{timestamp}.txt"
+    upload_url = f"{SUPABASE_URL}/storage/v1/object/{BUCKET_NAME}/{file_name}"
+    upload_headers = headers.copy()
+    upload_headers["Content-Type"] = "text/plain"
+    response = requests.post(upload_url, headers=upload_headers, data=token.encode("utf-8"))
+    if response.status_code in [200, 201]:
+        print(f"✅ Token salvo no bucket como '{file_name}'")
+    else:
+        print(f"❌ Falha ao salvar token: {response.status_code} - {response.text}")
 
-# =========================================
-# EXEMPLO DE USO:
+def salvar_token_na_tabela(token: str):
+    print("📄 Salvando token na tabela...")
+    now = datetime.now(timezone.utc).isoformat()
+    dados = {"token": token, "created_at": now}
+    response = supabase.table(TABLE_NAME).insert(dados).execute()
+    if hasattr(response, 'error') and response.error:
+        print("❌ Erro ao inserir na tabela:", response.error.message)
+    else:
+        print("✅ Token salvo na tabela com sucesso.")
 
+# ===============================
+# FLUXO PRINCIPAL
+# ===============================
 if __name__ == "__main__":
-    # Certifique-se de que as variáveis de ambiente EMAIL e SENHA estejam configuradas corretamente.
-    token = coletar_token()
-
-    # Salvar o token no arquivo de texto
-    salvar_token(token)
+    token = coletar_token(EMAIL, SENHA, RELATORIO_URL)
+    if token:
+        salvar_token_no_bucket(token)
+        salvar_token_na_tabela(token)
+    else:
+        print("❌ Token não coletado.")
