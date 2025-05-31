@@ -1,6 +1,6 @@
 name: Coletar Token 🧪
 
-# Dispara em qualquer push na branch principal (ou ajuste conforme necessidade)
+# Aciona em pushes na branch 'main' (ajuste se quiser outra branch)
 on:
   push:
     branches: [ main ]
@@ -11,44 +11,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) Faz checkout do repositório
+      # 1) Fazer checkout do repositório
       - name: 📥 Checkout do repositório
         uses: actions/checkout@v4
 
-      # 2) Configura Python (3.10.x)
+      # 2) Configurar Python (3.10.x)
       - name: 🐍 Configurar Python 3.10
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      # 3) Instala dependências de sistema (Chromium e bibliotecas mínimas)
-      #    O Ubuntu runner já traz o Google Chrome instalado, mas vamos garantir o Chromium e drivers.
+      # 3) Instalar dependências de sistema (Chromium + libs mínimas para headless)
       - name: 🛠️ Instalar dependências de sistema
         run: |
           sudo apt-get update
-          # Instala o Chromium (caso precise) e bibliotecas necessárias para headless
+          # Instala o Chromium, chromedriver e bibliotecas essenciais para rodar headless
           sudo apt-get install -y chromium-browser chromium-chromedriver \
             libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 \
             libxext6 libxfixes3 libxi6 libxtst6 libxrender1 libglib2.0-0 libnss3 \
             libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libdbus-1-3 libgtk-3-0 \
             libxrandr2 libgbm1 libasound2 libpulse0 libxt6 libxss1
 
-      # 4) Instala dependências Python (baseadas no requirements.txt)
+      # 4) Instalar dependências Python (via requirements.txt)
       - name: 📦 Instalar dependências Python
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 5) Define variáveis de ambiente sensíveis (via Secrets)
-      #    Crie os quatro secrets no seu repositório: EMAIL_HIPLAT, SENHA_HIPLAT, RELATORIO_URL
-      - name: 🔐 Carregar ENVs (do GitHub Secrets)
-        run: echo "Variáveis carregadas"
+      # 5) Definir variáveis de ambiente sensíveis (via Secrets do repositório)
+      #    Crie estes secrets em Settings → Secrets and variables → Actions:
+      #      • EMAIL_HIPLAT
+      #      • SENHA_HIPLAT
+      #      • RELATORIO_URL
+      - name: 🔐 Carregar variáveis de ambiente
+        run: echo "Variáveis de ambiente carregadas"
         env:
           EMAIL_HIPLAT: ${{ secrets.EMAIL_HIPLAT }}
           SENHA_HIPLAT: ${{ secrets.SENHA_HIPLAT }}
           RELATORIO_URL: ${{ secrets.RELATORIO_URL }}
 
-      # 6) Executa o script de coleta de token em modo headless
+      # 6) Executar o script de coleta de token
       - name: 🧪 Executar coletar_token.py
         env:
           EMAIL_HIPLAT: ${{ secrets.EMAIL_HIPLAT }}
