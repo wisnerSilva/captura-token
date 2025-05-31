@@ -1,3 +1,5 @@
+# .github/workflows/ci-playwright.yml
+
 name: CI Ubuntu 24.04 Playwright Fix
 
 on:
@@ -8,20 +10,25 @@ on:
 
 jobs:
   build:
+    # Especifica que o runner será Ubuntu 24.04
     runs-on: ubuntu-24.04
 
     steps:
+      # 1) Faz checkout do seu código
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2) Mostra a versão do Ubuntu (útil para debugging)
       - name: Mostrar versão do Ubuntu
         run: cat /etc/os-release
 
+      # 3) Instala todas as dependências do sistema
       - name: Instalar dependências do sistema (Ubuntu 24.04)
         run: |
+          # Atualiza o índice de pacotes
           sudo apt-get update
 
-          # Substituímos 'libasound2' por 'libasound2t64'
+          # Substituímos 'libasound2' por 'libasound2t64' para Ubuntu 24.04
           sudo apt-get install -y \
             wget \
             unzip \
@@ -46,20 +53,30 @@ jobs:
             libxt6 \
             libcups2t64
 
-          # Baixa e instala o Chrome; corrige dependências, se necessário
+          # Baixa o pacote .deb do Chrome
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+
+          # Instala o Chrome; se alguma dependência faltar, apt corrige com -f
           sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
 
+      # 4) Configura o Python 3.10
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
+      # 5) Instala bibliotecas Python (sua requirements.txt)
       - name: Install dependencies Python
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # 6) (Opcional) Instala os browsers do Playwright com dependências
+      - name: Install Playwright Browsers
+        run: |
+          npx playwright install --with-deps
+
+      # 7) Executa seus testes (pytest, por exemplo)
       - name: Run tests
         run: |
           pytest || echo "Tests falharam"
