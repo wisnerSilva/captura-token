@@ -1,159 +1,130 @@
-import os
-import time
-from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
+import time
 
 # ===============================
-# VARIÁVEIS DE AMBIENTE
+# CONFIGURAÇÕES
 # ===============================
-EMAIL = os.environ.get("EMAIL_HIPLAT")
-SENHA = os.environ.get("SENHA_HIPLAT")
-RELATORIO_URL = os.environ.get("RELATORIO_URL")
+TEMPO_MAX_CARREGAMENTO = 120  # Tempo máx. para carregamento (segundos)
+TEMPO_VERIFICAR_TOKEN = 30    # Tempo tentando capturar o token
+TEMPO_ENTRE_TENTATIVAS = 1    # Intervalo entre tentativas de leitura
 
 # ===============================
-# FUNÇÃO DE COLETA DE TOKEN COM LOGS
+# COLETAR TOKEN
 # ===============================
 def coletar_token(email, senha):
-    timestamp = lambda: datetime.now().strftime('%H:%M:%S')
-    print(f"[{timestamp()}] Iniciando função coletar_token")
+    """
+    Loga na HiPlatform, acessa relatórios e captura token do localStorage.
+    """
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless=new')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--disable-blink-features=AutomationControlled')
+    options.add_argument('--window-size=1920,1080')
 
-    # Configurando opções do Chrome
-    try:
-        print(f"[{timestamp()}] Configurando ChromeOptions")
-        options = webdriver.ChromeOptions()
-        options.add_argument('--headless')
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
-        print(f"[{timestamp()}] ChromeOptions configuradas")
-    except Exception as e:
-        print(f"[{timestamp()}] Erro ao configurar ChromeOptions: {e}")
-        return None
-
-    # Inicializa o driver
-    try:
-        print(f"[{timestamp()}] Inicializando ChromeDriver")
-        driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
-            options=options
-        )
-        print(f"[{timestamp()}] ChromeDriver iniciado")
-    except Exception as e:
-        print(f"[{timestamp()}] Erro ao iniciar ChromeDriver: {e}")
-        return None
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     try:
-        # Acessar página de login
-        print(f"[{timestamp()}] Acessando URL de login: https://horus.hiplatform.com/")
+        wait = WebDriverWait(driver, 40)
+        print("🚀 Acessando página de login...")
         driver.get("https://horus.hiplatform.com/")
-        wait = WebDriverWait(driver, 30)
-        print(f"[{timestamp()}] Página de login carregada, iniciando interação")
 
-        # Clica em "Continuar" se aparecer
+        # Etapa 1: Clicar em "Continuar" se existir
         try:
-            print(f"[{timestamp()}] Verificando botão CONTINUAR")
-            btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Continuar']")))
-            btn.click()
-            print(f"[{timestamp()}] Botão CONTINUAR clicado")
-            time.sleep(2)
-        except Exception as e:
-            print(f"[{timestamp()}] Botão CONTINUAR não apareceu: {e}, prosseguindo sem clicar")
+            continuar_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Continuar']")))
+            continuar_btn.click()
+            print("✅ Botão CONTINUAR clicado!")
+            time.sleep(3)
+        except:
+            pass
 
-        # Preenchendo credenciais
-        try:
-            print(f"[{timestamp()}] Buscando campo de e-mail")
-            inp = wait.until(EC.presence_of_element_located((By.ID, "login_login")))
-            inp.clear()
-            inp.send_keys(email)
-            print(f"[{timestamp()}] E-mail preenchido")
-        except Exception as e:
-            print(f"[{timestamp()}] Erro ao preencher e-mail: {e}")
-            return None
+        # Etapa 2: Login
+        email_input = wait.until(EC.presence_of_element_located((By.ID, "login_login")))
+        email_input.clear()
+        email_input.send_keys(email)
 
-        try:
-            print(f"[{timestamp()}] Buscando campo de senha")
-            pwd = wait.until(EC.presence_of_element_located((By.ID, "login_password")))
-            pwd.clear()
-            pwd.send_keys(senha)
-            print(f"[{timestamp()}] Senha preenchida")
-        except Exception as e:
-            print(f"[{timestamp()}] Erro ao preencher senha: {e}")
-            return None
-
-        time.sleep(1)
-        # Clica em Entrar
-        try:
-            print(f"[{timestamp()}] Verificando botão ENTRAR")
-            enter_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Entrar' and not(@disabled)]")))
-            enter_btn.click()
-            print(f"[{timestamp()}] Botão ENTRAR clicado")
-        except Exception as e:
-            print(f"[{timestamp()}] Erro ao clicar ENTRAR: {e}")
-            return None
-
-        # Aguarda URL /products
-        try:
-            print(f"[{timestamp()}] Aguardando redirecionamento para /products")
-            wait.until(EC.url_contains("/products"))
-            print(f"[{timestamp()}] Redirecionamento confirmado, página de produtos carregada")
-        except Exception as e:
-            print(f"[{timestamp()}] Timeout aguardando /products: {e}")
-            return None
+        senha_input = wait.until(EC.presence_of_element_located((By.ID, "login_password")))
+        senha_input.clear()
+        senha_input.send_keys(senha)
 
         time.sleep(2)
-        # Navega para relatório
-        try:
-            print(f"[{timestamp()}] Navegando para URL do relatório: {RELATORIO_URL}")
-            driver.get(RELATORIO_URL)
-            print(f"[{timestamp()}] URL de relatório carregada: {driver.current_url}")
-        except Exception as e:
-            print(f"[{timestamp()}] Erro ao carregar relatório: {e}")
-            return None
 
-        # Espera carregamento completo do relatório (até 60s)
-        print(f"[{timestamp()}] Iniciando loop de verificação do carregamento do relatório")
+        entrar_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Entrar' and not(@disabled)]")))
+        entrar_btn.click()
+        print("✅ Botão ENTRAR clicado!")
+
+        # Etapa 3: Esperar redirecionamento
+        wait.until(EC.url_contains("/products"))
+        print("✅ Página de produtos carregada!")
+        time.sleep(3)
+
+        # Etapa 4: Navegar para a página de relatório
+        relatorio_url = "https://www5.directtalk.com.br/static/beta/admin/main.html#!/relatorios/hsmReports?depto=-1"
+        driver.get(relatorio_url)
+        print("🚀 Acessando página de relatórios...")
+
+        relatorio_carregado = False
         inicio = time.time()
-        carregado = False
-        while time.time() - inicio < 60:
+
+        while time.time() - inicio < TEMPO_MAX_CARREGAMENTO:
+            time.sleep(5)
             current_url = driver.current_url
-            ready_state = driver.execute_script("return document.readyState")
-            print(f"[{timestamp()}] URL atual: {current_url}, readyState: {ready_state}")
-            if "hsmReports" in current_url and ready_state == "complete":
-                carregado = True
-                print(f"[{timestamp()}] Relatório carregado totalmente")
-                break
-            time.sleep(2)
-        if not carregado:
-            print(f"[{timestamp()}] Tempo limite ao carregar relatório")
+            if "hsmReports" in current_url:
+                estado = driver.execute_script("return document.readyState")
+                if estado == "complete":
+                    relatorio_carregado = True
+                    break
+
+        if not relatorio_carregado:
+            print("⚠️ Página de relatório não carregou.")
             return None
 
-        # Captura token
-        try:
-            print(f"[{timestamp()}] Capturando token do localStorage")
+        # Etapa 5: Forçar ir para home/index para garantir token injetado
+        final_url = "https://www5.directtalk.com.br/static/beta/admin/main.html#!/home/index?depto=-1"
+        driver.get(final_url)
+        print("🚀 Acessando página final (home/index)...")
+        wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
+        print("✅ Página carregada com sucesso!")
+
+        # Etapa 6: Capturar token do localStorage
+        token = None
+        inicio = time.time()
+        while time.time() - inicio < TEMPO_VERIFICAR_TOKEN:
             token = driver.execute_script("return window.localStorage.getItem('dt.admin.token');")
             if token:
-                print(f"[{timestamp()}] TOKEN capturado: {token}")
-                return token
-            else:
-                print(f"[{timestamp()}] Token não encontrado no localStorage")
-                return None
-        except Exception as e:
-            print(f"[{timestamp()}] Erro ao capturar token: {e}")
+                break
+            time.sleep(TEMPO_ENTRE_TENTATIVAS)
+
+        if token:
+            print("✅ TOKEN CAPTURADO COM SUCESSO!")
+            print("🔐 DT-Fenix-Token:", token)
+            return token
+        else:
+            print("❌ Token não encontrado no localStorage.")
             return None
 
     finally:
-        print(f"[{timestamp()}] Fechando navegador")
         driver.quit()
+        print("🛑 Navegador encerrado.")
 
 # ===============================
-# EXECUÇÃO
+# EXECUÇÃO DE TESTE LOCAL
 # ===============================
 if __name__ == "__main__":
-    print(f"[{timestamp()}] Iniciando execução principal")
-    token = coletar_token(EMAIL, SENHA)
-    if not token:
-        print(f"[{timestamp()}] Falha ao coletar token")
+    email = "wisner.silva@queimadiaria.com.br"
+    senha = "Wisner432"
+
+    token = coletar_token(email, senha)
+
+    if token:
+        with open("token.txt", "w") as f:
+            f.write(token)
+        print("📄 Token salvo em 'token.txt'!")
+    else:
+        print("❌ Não foi possível capturar o token.")
