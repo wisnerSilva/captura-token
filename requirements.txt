@@ -1,4 +1,5 @@
-selenium
-webdriver-manager
-supabase
-requests
+selenium>=4.11.2
+webdriver-manager>=3.8.6
+requests>=2.31.0
+supabase>=1.0.3
+python-dotenv>=1.0.0  # útil para testes locais com .env 
