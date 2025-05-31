@@ -1,2 +1,4 @@
-selenium>=4.8.0
-webdriver-manager>=3.8.6
+selenium
+webdriver-manager
+supabase
+requests
