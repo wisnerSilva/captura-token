@@ -16,85 +16,144 @@ SENHA = os.environ.get("SENHA_HIPLAT")
 RELATORIO_URL = os.environ.get("RELATORIO_URL")
 
 # ===============================
-# FUNÇÃO BÁSICA DE COLETA DE TOKEN
+# FUNÇÃO DE COLETA DE TOKEN COM LOGS
 # ===============================
 def coletar_token(email, senha):
-    # Configurações mínimas do Chrome em headless
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
+    timestamp = lambda: datetime.now().strftime('%H:%M:%S')
+    print(f"[{timestamp()}] Iniciando função coletar_token")
+
+    # Configurando opções do Chrome
+    try:
+        print(f"[{timestamp()}] Configurando ChromeOptions")
+        options = webdriver.ChromeOptions()
+        options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        print(f"[{timestamp()}] ChromeOptions configuradas")
+    except Exception as e:
+        print(f"[{timestamp()}] Erro ao configurar ChromeOptions: {e}")
+        return None
 
     # Inicializa o driver
-    driver = webdriver.Chrome(
-        service=Service(ChromeDriverManager().install()),
-        options=options
-    )
+    try:
+        print(f"[{timestamp()}] Inicializando ChromeDriver")
+        driver = webdriver.Chrome(
+            service=Service(ChromeDriverManager().install()),
+            options=options
+        )
+        print(f"[{timestamp()}] ChromeDriver iniciado")
+    except Exception as e:
+        print(f"[{timestamp()}] Erro ao iniciar ChromeDriver: {e}")
+        return None
 
     try:
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Iniciando login...")
+        # Acessar página de login
+        print(f"[{timestamp()}] Acessando URL de login: https://horus.hiplatform.com/")
         driver.get("https://horus.hiplatform.com/")
         wait = WebDriverWait(driver, 30)
+        print(f"[{timestamp()}] Página de login carregada, iniciando interação")
 
         # Clica em "Continuar" se aparecer
         try:
+            print(f"[{timestamp()}] Verificando botão CONTINUAR")
             btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Continuar']")))
             btn.click()
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Botão CONTINUAR clicado")
+            print(f"[{timestamp()}] Botão CONTINUAR clicado")
             time.sleep(2)
-        except:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Botão CONTINUAR não apareceu, seguindo login")
+        except Exception as e:
+            print(f"[{timestamp()}] Botão CONTINUAR não apareceu: {e}, prosseguindo sem clicar")
 
-        # Preenche email e senha
-        inp = wait.until(EC.presence_of_element_located((By.ID, "login_login")))
-        inp.clear()
-        inp.send_keys(email)
-        pwd = wait.until(EC.presence_of_element_located((By.ID, "login_password")))
-        pwd.clear()
-        pwd.send_keys(senha)
+        # Preenchendo credenciais
+        try:
+            print(f"[{timestamp()}] Buscando campo de e-mail")
+            inp = wait.until(EC.presence_of_element_located((By.ID, "login_login")))
+            inp.clear()
+            inp.send_keys(email)
+            print(f"[{timestamp()}] E-mail preenchido")
+        except Exception as e:
+            print(f"[{timestamp()}] Erro ao preencher e-mail: {e}")
+            return None
+
+        try:
+            print(f"[{timestamp()}] Buscando campo de senha")
+            pwd = wait.until(EC.presence_of_element_located((By.ID, "login_password")))
+            pwd.clear()
+            pwd.send_keys(senha)
+            print(f"[{timestamp()}] Senha preenchida")
+        except Exception as e:
+            print(f"[{timestamp()}] Erro ao preencher senha: {e}")
+            return None
+
         time.sleep(1)
-
         # Clica em Entrar
-        enter_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Entrar' and not(@disabled)]")))
-        enter_btn.click()
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Botão ENTRAR clicado")
+        try:
+            print(f"[{timestamp()}] Verificando botão ENTRAR")
+            enter_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Entrar' and not(@disabled)]")))
+            enter_btn.click()
+            print(f"[{timestamp()}] Botão ENTRAR clicado")
+        except Exception as e:
+            print(f"[{timestamp()}] Erro ao clicar ENTRAR: {e}")
+            return None
 
-        # Aguarda /products carregar
-        wait.until(EC.url_contains("/products"))
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Página de produtos carregada")
+        # Aguarda URL /products
+        try:
+            print(f"[{timestamp()}] Aguardando redirecionamento para /products")
+            wait.until(EC.url_contains("/products"))
+            print(f"[{timestamp()}] Redirecionamento confirmado, página de produtos carregada")
+        except Exception as e:
+            print(f"[{timestamp()}] Timeout aguardando /products: {e}")
+            return None
+
         time.sleep(2)
+        # Navega para relatório
+        try:
+            print(f"[{timestamp()}] Navegando para URL do relatório: {RELATORIO_URL}")
+            driver.get(RELATORIO_URL)
+            print(f"[{timestamp()}] URL de relatório carregada: {driver.current_url}")
+        except Exception as e:
+            print(f"[{timestamp()}] Erro ao carregar relatório: {e}")
+            return None
 
-        # Navega para página de relatórios
-        driver.get(RELATORIO_URL)
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Acessando relatório")
-
-        # Espera até relatório carregar (máx 60s)
+        # Espera carregamento completo do relatório (até 60s)
+        print(f"[{timestamp()}] Iniciando loop de verificação do carregamento do relatório")
         inicio = time.time()
+        carregado = False
         while time.time() - inicio < 60:
-            if "hsmReports" in driver.current_url and driver.execute_script("return document.readyState") == "complete":
+            current_url = driver.current_url
+            ready_state = driver.execute_script("return document.readyState")
+            print(f"[{timestamp()}] URL atual: {current_url}, readyState: {ready_state}")
+            if "hsmReports" in current_url and ready_state == "complete":
+                carregado = True
+                print(f"[{timestamp()}] Relatório carregado totalmente")
                 break
             time.sleep(2)
-        else:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Tempo limite ao carregar relatório")
+        if not carregado:
+            print(f"[{timestamp()}] Tempo limite ao carregar relatório")
             return None
 
         # Captura token
-        token = driver.execute_script("return window.localStorage.getItem('dt.admin.token');")
-        if token:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] TOKEN: {token}")
-            return token
-        else:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Token não encontrado")
+        try:
+            print(f"[{timestamp()}] Capturando token do localStorage")
+            token = driver.execute_script("return window.localStorage.getItem('dt.admin.token');")
+            if token:
+                print(f"[{timestamp()}] TOKEN capturado: {token}")
+                return token
+            else:
+                print(f"[{timestamp()}] Token não encontrado no localStorage")
+                return None
+        except Exception as e:
+            print(f"[{timestamp()}] Erro ao capturar token: {e}")
             return None
 
     finally:
+        print(f"[{timestamp()}] Fechando navegador")
         driver.quit()
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Navegador fechado")
 
 # ===============================
 # EXECUÇÃO
 # ===============================
 if __name__ == "__main__":
+    print(f"[{timestamp()}] Iniciando execução principal")
     token = coletar_token(EMAIL, SENHA)
     if not token:
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Falha ao coletar token")
+        print(f"[{timestamp()}] Falha ao coletar token")
