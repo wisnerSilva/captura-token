@@ -7,7 +7,7 @@ on:
 
 jobs:
   coletar_token:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
