@@ -1,36 +1,54 @@
+name: Coletar Token 🧪
 
-name: Coletar Token
-
+# Aciona em pushes para qualquer branch. Ajuste se quiser rodar apenas em main, tags, etc.
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 * * * *'
+  push:
+    branches: [ '**' ]
 
 jobs:
-  run:
+  run-collect-token:
+    name: 🚀 Executar coletar_token.py
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+      # 1) Faz checkout do repositório
+      - name: 📥 Checkout do repositório
+        uses: actions/checkout@v4
 
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.10
+      # 2) Configura Python (versão 3.10.x, mas pode usar 3.9.x ou 3.11.x se preferir)
+      - name: 🐍 Configurar Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-    - name: Install Chrome
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y google-chrome-stable
+      # 3) Instala dependências do sistema (caso queira instalar libs extras; em geral Ubuntu já traz o Chrome)
+      - name: 🛠️ Instalar dependências do sistema
+        run: |
+          sudo apt-get update
+          # Caso não tenha, instala libgtk e outras que o Chrome headless possa requerer
+          sudo apt-get install -y libnss3 libgconf-2-4 libxi6 libxcursor1 libxrandr2 libxss1 libxdamage1 libxrandr2 libatk1.0-0 libatk-bridge2.0-0 libcups2 libxcomposite1 libxkbcommon0 libxkbcommon-x11-0 libdbus-1-3 libdrm2 libgbm1
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      # 4) Instalando dependências Python (baseadas no requirements.txt)
+      - name: 📦 Instalar dependências Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Run script
-      env:
-        EMAIL_HIPLAT: ${{ secrets.EMAIL_HIPLAT }}
-        SENHA_HIPLAT: ${{ secrets.SENHA_HIPLAT }}
-      run: python coletar_token.py
+      # 5) Definir variáveis de ambiente (substitua os placeholders pelos secrets do repo)
+      - name: 🔐 Definir variáveis de ambiente
+        # Estas ENV_VARS devem estar definidas nos Secrets do repositório
+        env:
+          EMAIL_HIPLAT: ${{ secrets.EMAIL_HIPLAT }}
+          SENHA_HIPLAT: ${{ secrets.SENHA_HIPLAT }}
+          RELATORIO_URL: ${{ secrets.RELATORIO_URL }}
+        run: |
+          echo "Variáveis de ambiente carregadas"
+
+      # 6) Executar o script de coleta de token
+      - name: 🧪 Executar coletar_token.py
+        env:
+          EMAIL_HIPLAT: ${{ secrets.EMAIL_HIPLAT }}
+          SENHA_HIPLAT: ${{ secrets.SENHA_HIPLAT }}
+          RELATORIO_URL: ${{ secrets.RELATORIO_URL }}
+        run: |
+          python coletar_token.py
