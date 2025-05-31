@@ -1,0 +1,38 @@
+name: Coletar Token
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # Executa todo dia às 12h UTC
+  workflow_dispatch:
+
+jobs:
+  coletar-token:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📋 Mostrar versão do Ubuntu
+        run: cat /etc/os-release
+
+      - name: 📥 Clonar o repositório
+        uses: actions/checkout@v3
+
+      - name: 🐍 Configurar ambiente Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: 📦 Instalar dependências do sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libgconf-2-4 libasound2t64
+
+      - name: 📦 Instalar dependências Python
+        run: pip install -r requirements.txt
+
+      - name: 🚀 Executar script Python
+        env:
+          EMAIL: ${{ secrets.EMAIL }}
+          SENHA: ${{ secrets.SENHA }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python coletar_token.py
