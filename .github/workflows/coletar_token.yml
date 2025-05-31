@@ -1,40 +1,38 @@
 name: Coletar Token
 
 on:
+  schedule:
+    - cron: '0 12 * * *' # Executa todo dia às 12h UTC
   workflow_dispatch:
 
 jobs:
   coletar-token:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout do repositório
+      - name: 📋 Mostrar versão do Ubuntu
+        run: cat /etc/os-release
+
+      - name: 📥 Clonar o repositório
         uses: actions/checkout@v3
 
-      - name: Configurar Python
+      - name: 🐍 Configurar ambiente Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: 3.11
 
-      - name: Instalar dependências do sistema (Ubuntu 24.04)
+      - name: 📦 Instalar dependências do sistema
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            libgtk2.0-0t64 libgtk-3-0t64 libgbm-dev libnotify-dev \
-            libnss3 libxss1 libasound2t64 libxtst6 xauth xvfb
+          sudo apt-get install -y libnss3 libgconf-2-4 libasound2t64
 
-      - name: Instalar dependências Python
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      - name: 📦 Instalar dependências Python
+        run: pip install -r requirements.txt
 
-      - name: Instalar navegadores do Playwright
-        run: |
-          python -m playwright install --with-deps
-
-      - name: Executar script coletar_token.py
+      - name: 🚀 Executar script Python
         env:
-          USER_LOGIN: ${{ secrets.USER_LOGIN }}
-          USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
-        run: |
-          python coletar_token.py
+          EMAIL: ${{ secrets.EMAIL }}
+          SENHA: ${{ secrets.SENHA }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python coletar_token.py
