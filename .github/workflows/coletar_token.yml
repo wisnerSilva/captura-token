@@ -14,7 +14,7 @@ jobs:
       - name: 📥 Checkout do repositório
         uses: actions/checkout@v4
 
-      # 2) Configurar Python 3.10
+      # 2) Configurar Python
       - name: 🐍 Configurar Python 3.10
         uses: actions/setup-python@v4
         with:
@@ -35,24 +35,18 @@ jobs:
           sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get install -f -y
 
       # 4) Instalar dependências Python
-      - name: 📦 Instalar dependências Python
+      - name: 📦 Instalar requirements.txt
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 5) Carregar variáveis de ambiente (via secrets)
-      - name: 🔐 Carregar variáveis de ambiente
-        run: echo "Variáveis de ambiente carregadas"
-        env:
-          EMAIL_HIPLAT: ${{ secrets.EMAIL_HIPLAT }}
-          SENHA_HIPLAT: ${{ secrets.SENHA_HIPLAT }}
-          RELATORIO_URL: ${{ secrets.RELATORIO_URL }}
-
-      # 6) Executar o script coletar_token.py
+      # 5) Executar script com variáveis de ambiente (via secrets)
       - name: 🧪 Executar coletar_token.py
         env:
           EMAIL_HIPLAT: ${{ secrets.EMAIL_HIPLAT }}
           SENHA_HIPLAT: ${{ secrets.SENHA_HIPLAT }}
           RELATORIO_URL: ${{ secrets.RELATORIO_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
           python coletar_token.py
