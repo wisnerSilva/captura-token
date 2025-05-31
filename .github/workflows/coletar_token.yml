@@ -1,4 +1,4 @@
-name: Coletar Token 🧪
+name: Coletar Token da HiPlatform 🔐
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout do repositório
+      - name: 📥 Clonar o repositório
         uses: actions/checkout@v4
 
       - name: 🐍 Configurar Python
@@ -24,7 +24,7 @@ jobs:
           sudo apt-get install -y wget unzip curl gnupg \
             libx11-6 libx11-xcb1 libxcb1 libnss3 libxcomposite1 libxdamage1 \
             libxkbcommon0 libxkbcommon-x11-0 libatk1.0-0 libatk-bridge2.0-0 \
-            libdrm2 libdbus-1-3 libxfixes3 libxcursor1 libxt6 libcups2 || true
+            libdrm2 libdbus-1-3 libxfixes3 libxcursor1 libxt6 libcups2 libasound2t64
 
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
@@ -34,11 +34,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 🧪 Executar script coletar_token.py
+      - name: ▶️ Executar script Python
         env:
-          EMAIL_HIPLAT: ${{ secrets.EMAIL_HIPLAT }}
-          SENHA_HIPLAT: ${{ secrets.SENHA_HIPLAT }}
+          EMAIL: ${{ secrets.EMAIL_HIPLAT }}
+          SENHA: ${{ secrets.SENHA_HIPLAT }}
           RELATORIO_URL: ${{ secrets.RELATORIO_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: python coletar_token.py
