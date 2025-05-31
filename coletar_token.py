@@ -1,5 +1,6 @@
 import os
 import time
+import tempfile
 import requests
 from datetime import datetime, timezone
 from selenium import webdriver
@@ -32,11 +33,16 @@ def coletar_token(email, senha):
     """
     Loga na HiPlatform, navega até a página de relatórios e retorna o token armazenado em localStorage.
     """
+    # Cria um perfil temporário único para o Chrome
+    profile_dir = tempfile.mkdtemp(prefix="chrome_profile_")
+
     options = webdriver.ChromeOptions()
+    options.add_argument(f"--user-data-dir={profile_dir}")
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-blink-features=AutomationControlled')
+    options.add_argument('--remote-debugging-port=0')
 
     driver = webdriver.Chrome(
         service=Service(ChromeDriverManager().install()),
@@ -48,7 +54,7 @@ def coletar_token(email, senha):
         driver.get("https://horus.hiplatform.com/")
         wait = WebDriverWait(driver, 40)
 
-        # Clica em "Continuar"
+        # Clica em "Continuar" se existir
         try:
             btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Continuar']")))
             btn.click()
@@ -57,7 +63,7 @@ def coletar_token(email, senha):
         except:
             pass
 
-        # Preenche credenciais e entra
+        # Preenche credenciais
         inp = wait.until(EC.presence_of_element_located((By.ID, "login_login")))
         inp.clear(); inp.send_keys(email)
         pwd = wait.until(EC.presence_of_element_located((By.ID, "login_password")))
@@ -67,28 +73,27 @@ def coletar_token(email, senha):
         enter_btn.click()
         print("✅ ENTRAR clicado")
 
-        # Aguarda página de produtos
+        # Aguarda produtos
         wait.until(EC.url_contains("/products"))
         print("✅ Página de produtos carregada")
         time.sleep(5)
 
-        # Navega para relatório
+        # Navega até relatório
         driver.get(RELATORIO_URL)
         print("🚀 Acessando página de relatórios...")
 
-        # Espera até 2 minutos pelo carregamento completo
+        # Espera carregamento completo (até 2 minutos)
         inicio = time.time()
         while time.time() - inicio < 120:
             time.sleep(5)
             if "hsmReports" in driver.current_url:
-                ready = driver.execute_script("return document.readyState")
-                if ready == "complete":
+                if driver.execute_script("return document.readyState") == "complete":
                     break
         else:
             print("⚠️ Relatório não carregou em 2 minutos")
             return None
 
-        # Captura token do localStorage
+        # Captura token
         time.sleep(5)
         token = driver.execute_script("return window.localStorage.getItem('dt.admin.token');")
         if token:
@@ -97,6 +102,7 @@ def coletar_token(email, senha):
         else:
             print("❌ Token não encontrado")
             return None
+
     finally:
         driver.quit()
         print("🌐 Navegador fechado")
