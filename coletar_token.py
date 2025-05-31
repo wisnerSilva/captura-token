@@ -1,6 +1,5 @@
 import os
 import time
-import tempfile
 import requests
 from datetime import datetime, timezone
 from selenium import webdriver
@@ -33,16 +32,12 @@ def coletar_token(email, senha):
     """
     Loga na HiPlatform, navega até a página de relatórios e retorna o token armazenado em localStorage.
     """
-    # Cria um perfil temporário único para o Chrome
-    profile_dir = tempfile.mkdtemp(prefix="chrome_profile_")
-
     options = webdriver.ChromeOptions()
-    options.add_argument(f"--user-data-dir={profile_dir}")
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-gpu')
     options.add_argument('--disable-blink-features=AutomationControlled')
-    options.add_argument('--remote-debugging-port=0')
 
     driver = webdriver.Chrome(
         service=Service(ChromeDriverManager().install()),
@@ -59,7 +54,7 @@ def coletar_token(email, senha):
             btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Continuar']")))
             btn.click()
             print("✅ CONTINUAR clicado")
-            time.sleep(5)
+            time.sleep(3)
         except:
             pass
 
@@ -68,15 +63,15 @@ def coletar_token(email, senha):
         inp.clear(); inp.send_keys(email)
         pwd = wait.until(EC.presence_of_element_located((By.ID, "login_password")))
         pwd.clear(); pwd.send_keys(senha)
-        time.sleep(3)
+        time.sleep(2)
         enter_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Entrar' and not(@disabled)]")))
         enter_btn.click()
         print("✅ ENTRAR clicado")
 
-        # Aguarda produtos
+        # Aguarda página de produtos
         wait.until(EC.url_contains("/products"))
         print("✅ Página de produtos carregada")
-        time.sleep(5)
+        time.sleep(3)
 
         # Navega até relatório
         driver.get(RELATORIO_URL)
@@ -86,15 +81,14 @@ def coletar_token(email, senha):
         inicio = time.time()
         while time.time() - inicio < 120:
             time.sleep(5)
-            if "hsmReports" in driver.current_url:
-                if driver.execute_script("return document.readyState") == "complete":
-                    break
+            if "hsmReports" in driver.current_url and driver.execute_script("return document.readyState") == "complete":
+                break
         else:
             print("⚠️ Relatório não carregou em 2 minutos")
             return None
 
         # Captura token
-        time.sleep(5)
+        time.sleep(3)
         token = driver.execute_script("return window.localStorage.getItem('dt.admin.token');")
         if token:
             print("✅ TOKEN CAPTURADO")
