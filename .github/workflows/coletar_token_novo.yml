@@ -46,7 +46,7 @@ jobs:
             libxt6 \
             libcups2t64
 
-          # Baixa e instala o Chrome; corrige dependências se necessário
+          # Baixa e instala o Chrome; corrige dependências, se necessário
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
 
