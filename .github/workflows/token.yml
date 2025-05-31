@@ -8,7 +8,7 @@ on:
 jobs:
   run-collect-token:
     name: 🚀 Executar coletar_token.py
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # ✅ Usando imagem compatível com libgconf-2-4
 
     steps:
       # 1) Checkout do repositório
@@ -25,12 +25,11 @@ jobs:
       - name: 🛠️ Instalar dependências de sistema
         run: |
           sudo apt-get update
-          # Instala Chromium, chromedriver e bibliotecas essenciais para headless
           sudo apt-get install -y chromium-browser chromium-chromedriver \
             libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 \
             libxext6 libxfixes3 libxi6 libxtst6 libxrender1 libglib2.0-0 libnss3 \
             libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libdbus-1-3 libgtk-3-0 \
-            libxrandr2 libgbm1 libasound2 libpulse0 libxt6 libxss1
+            libxrandr2 libgbm1 libasound2 libpulse0 libxt6 libxss1 libgconf-2-4
 
       # 4) Instalar dependências Python (requirements.txt)
       - name: 📦 Instalar dependências Python
@@ -39,10 +38,6 @@ jobs:
           pip install -r requirements.txt
 
       # 5) Definir variáveis de ambiente sensíveis (via Secrets do repositório)
-      #    Crie os três secrets em Settings → Secrets and variables → Actions:
-      #      • EMAIL_HIPLAT
-      #      • SENHA_HIPLAT
-      #      • RELATORIO_URL
       - name: 🔐 Carregar variáveis de ambiente
         run: echo "Variáveis de ambiente carregadas"
         env:
