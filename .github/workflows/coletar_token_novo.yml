@@ -21,7 +21,7 @@ jobs:
         run: |
           sudo apt-get update
 
-          # Observe que retiramos 'libasound2' e usamos somente 'libasound2t64'
+          # Substituímos 'libasound2' por 'libasound2t64'
           sudo apt-get install -y \
             wget \
             unzip \
@@ -46,7 +46,7 @@ jobs:
             libxt6 \
             libcups2t64
 
-          # Baixa e instala o Chrome; se faltar dependência, corrige com apt-get -f
+          # Baixa e instala o Chrome; corrige dependências se necessário
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
 
