@@ -151,7 +151,7 @@ from coletar_token import coletar_token  # Importa a função do seu código ant
 # VARIÁVEIS DE AMBIENTE
 # ===============================
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_KEY")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 TABLE_HSM = "hsm_mensagens"
 TABLE_LOG = "hsm_logs"
 EMAIL = os.getenv("EMAIL_HIPLAT")
