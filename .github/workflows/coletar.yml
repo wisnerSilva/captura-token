@@ -1,3 +1,11 @@
+name: Coletar HSM Incremental
+
+on:
+  schedule:
+    - cron: '0 3-17 * * *'
+  workflow_dispatch:
+
+jobs:
   run_coletar_hsm:
     runs-on: ubuntu-24.04
     needs: run_coletar_token
