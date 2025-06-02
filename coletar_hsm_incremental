@@ -136,6 +136,10 @@ if __name__ == "__main__":
 # 🚫🚫🚫 NUNCA ALTERAR O CÓDIGO ACIMA DESTA LINHA 🚫🚫🚫
 # Código original do coletor de token - protegido conforme instrução
 # ============================================
+# ============================================
+# 🚫🚫🚫 NUNCA ALTERAR O CÓDIGO ACIMA DESTA LINHA 🚫🚫🚫
+# Código original do coletor de token - protegido conforme instrução
+# ============================================
 
 import os
 import uuid
