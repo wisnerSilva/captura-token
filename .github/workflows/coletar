@@ -1,7 +1,7 @@
 name: Coletar Token Workflow
 on:
   schedule:
-    - cron: '0 */2 * * *'
+    - cron: '0 3-17 * * *'
 jobs:
   run_coletar_token:
     runs-on: ubuntu-24.04
