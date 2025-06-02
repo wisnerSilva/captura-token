@@ -47,7 +47,7 @@ jobs:
           SENHA_HIPLAT: ${{ secrets.SENHA_HIPLAT }}
           RELATORIO_URL: ${{ secrets.RELATORIO_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
 
   run_coletar_hsm:
     runs-on: ubuntu-24.04
@@ -91,4 +91,4 @@ jobs:
           SENHA_HIPLAT: ${{ secrets.SENHA_HIPLAT }}
           RELATORIO_URL: ${{ secrets.RELATORIO_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
