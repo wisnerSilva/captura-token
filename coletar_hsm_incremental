@@ -132,10 +132,7 @@ if __name__ == "__main__":
         salvar_token_na_tabela(token)
     else:
         print("❌ Token não coletado.")
-# ============================================
-# 🚫🚫🚫 NUNCA ALTERAR O CÓDIGO ACIMA DESTA LINHA 🚫🚫🚫
-# Código original do coletor de token - protegido conforme instrução
-# ============================================
+
 # ============================================
 # 🚫🚫🚫 NUNCA ALTERAR O CÓDIGO ACIMA DESTA LINHA 🚫🚫🚫
 # Código original do coletor de token - protegido conforme instrução
@@ -148,12 +145,7 @@ import pandas as pd
 from io import StringIO
 from datetime import datetime, timedelta, timezone
 from supabase import create_client, Client
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
+from coletar_token import coletar_token  # Importa a função do seu código anterior
 
 # ===============================
 # VARIÁVEIS DE AMBIENTE
@@ -177,56 +169,6 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 API_URL = "https://whatsapp-connect.hiplatform.com/hsmservices/api/Hsm/ExportHsm"
 TENANT_ID = "762b7805-51fc-4e84-a614-4eb2b5d4eb16"
 REPROCESS_DIAS = 3
-
-# ===============================
-# CÓDIGO ORIGINAL PARA COLETAR O TOKEN
-# ===============================
-def iniciar_driver():
-    options = webdriver.ChromeOptions()
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-blink-features=AutomationControlled')
-    options.add_argument('--headless')
-    return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-
-def fazer_login(driver, email, senha, timeout=20):
-    wait = WebDriverWait(driver, timeout)
-    driver.get("https://horus.hiplatform.com/")
-    print("🚀 Acessando página de login...")
-    try:
-        btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Continuar']")))
-        btn.click()
-        print("✅ CONTINUAR clicado")
-    except:
-        print("⚠️ CONTINUAR não encontrado — pulando")
-    inp = wait.until(EC.presence_of_element_located((By.ID, "login_login")))
-    inp.clear(); inp.send_keys(email)
-    pwd = wait.until(EC.presence_of_element_located((By.ID, "login_password")))
-    pwd.clear(); pwd.send_keys(senha)
-    ok = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Entrar' and not(@disabled)]")))
-    ok.click()
-    print("✅ ENTRAR clicado")
-    wait.until(EC.url_contains("/products"))
-    print("✅ Login bem-sucedido")
-
-def coletar_token(email, senha, url, max_wait=60):
-    driver = iniciar_driver()
-    try:
-        fazer_login(driver, email, senha)
-        driver.get(url)
-        print("🚀 Acessando relatório")
-        wait = WebDriverWait(driver, max_wait)
-        token = wait.until(lambda d: d.execute_script(
-            "return window.localStorage.getItem('dt.admin.token');"
-        ))
-        print("✅ TOKEN ENCONTRADO:", token)
-        return token
-    except Exception as e:
-        print("❌ Erro ao coletar token:", e)
-        return None
-    finally:
-        driver.quit()
-        print("🌐 Navegador fechado")
 
 # ===============================
 # FUNÇÕES DE LOG E MANIPULAÇÃO
@@ -304,7 +246,7 @@ def coletar_e_inserir(token: str, data: datetime):
 if __name__ == "__main__":
     token = coletar_token(EMAIL, SENHA, RELATORIO_URL)
     if token:
-        print(f"📃 Token usado na coleta HSM: {token}")
+        print(f"📜 Token usado na coleta HSM: {token}")
 
         # ==== OPÇÃO 1: CARGA INCREMENTAL ====
         data_inicio = obter_ultima_data()
@@ -321,4 +263,5 @@ if __name__ == "__main__":
         print("🎉 Coleta finalizada!")
     else:
         print("❌ Token não coletado. Encerrando fluxo.")
+
 
